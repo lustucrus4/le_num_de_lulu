@@ -15,11 +15,11 @@
     h1, h2, h3 {
       font-family: "Trattatello", fantasy;
       text-align: center;
-      margin-top: 20px;
+      margin-top: 10px;
       font-weight: normal;
       font-style: italic;
       letter-spacing: 1px;
-      font-size: 30px;
+      font-size: 22px;
 
     }
 
@@ -149,6 +149,138 @@
   border-bottom-right-radius: 10px;
 }
 
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    h1, h2, h3 {
+      font-family: "Trattatello", fantasy;
+      text-align: center;
+      margin-top: 10px;
+      font-weight: normal;
+      font-style: italic;
+      letter-spacing: 1px;
+      font-size: 22px;
+    }
+
+    #digits {
+      display: flex;
+      gap: 8px;
+      margin: 20px auto;
+      justify-content: center;
+    }
+
+    .digit-box {
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border: 3px solid #333;
+      border-radius: 8px;
+    }
+
+    .card {
+      position: absolute;
+      width: 200px;
+      padding: 10px;
+      border: 3px solid #333;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      cursor: move;
+      transition: transform 0.2s;
+      background-color: white;
+      animation: appear 0.8s ease-out;
+    }
+
+    @keyframes appear {
+      from {
+        transform: scale(0.2);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #counter {
+      font-size: 22px;
+      text-align: center;
+      margin: 20px auto;
+    }
+
+    #sudoku-card {
+      width: 365px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: white;
+      border: 3px solid #333;
+      border-radius: 10px;
+      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #sudoku-container {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      width: 360px;
+      height: 360px;
+      border: 3px solid black;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    .sudoku-cell {
+      font-size: 25px;
+      text-align: center;
+      border: 1px solid #aaa;
+      box-sizing: border-box;
+      outline: none;
+      padding: 2px;
+      position: relative;
+    }
+
+    .sudoku-cell.fixed {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+
+    .note {
+      font-size: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      height: 100%;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .note div {
+      text-align: center;
+      line-height: 10px;
+    }
+
+    #pencil-mode-btn {
+      display: block;
+      margin: 15px auto 0;
+      padding: 8px 16px;
+      background-color: #4159D2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #pencil-mode-btn:hover {
+      background-color: #2f45a0;
+    }
+  
   </style>
 </head>
 <body>
@@ -158,6 +290,7 @@
   <div id="sudoku-card">
     <h3>Grille de Sudoku</h3>
     <div id="sudoku-container"></div>
+    <button id="pencil-mode-btn">📝 Mode Crayon : OFF</button>
   </div>
 
   <script>
@@ -251,7 +384,7 @@
       timerEl.textContent = timer;
       if (timer === 0) {
         revealNext();
-        timer = 10;
+        timer = 300;
       }
     }
 
@@ -313,30 +446,36 @@
       [0, 0, 0, 0, 5, 0, 0, 0, 0]
     ];
 
+    let pencilMode = false;
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("pencil-mode-btn");
+      btn.addEventListener("click", () => {
+        pencilMode = !pencilMode;
+        btn.textContent = pencilMode ? "📝 Mode Crayon : ON" : "📝 Mode Crayon : OFF";
+      });
+    });
+
     function createSudoku() {
       const sudokuContainer = document.getElementById("sudoku-container");
-
       for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
-          const cell = document.createElement("input");
-          cell.type = "text";
-          cell.maxLength = 1;
+          const cell = document.createElement("div");
           cell.className = "sudoku-cell";
+          cell.contentEditable = true;
 
           if (sudokuGrid[row][col] !== 0) {
-            cell.value = sudokuGrid[row][col];
+            cell.textContent = sudokuGrid[row][col];
             cell.classList.add("fixed");
-            cell.disabled = true;
+            cell.contentEditable = false;
           }
 
-          if (row === 5 && col === 4) {
-            const color9 = colorList.find(c => c.id === 9)?.color;
-            if (color9) cell.style.backgroundColor = color9;
-          }
-
-          cell.addEventListener("input", function () {
-            if (/[^1-9]/.test(cell.value)) {
-              cell.value = "";
+          cell.addEventListener("input", () => {
+            let value = cell.textContent.replace(/[^1-9]/g, "");
+            if (pencilMode) {
+              value = [...new Set(value.split(""))].sort();
+              cell.innerHTML = `<div class="note">${value.map(d => `<div>${d}</div>`).join("")}</div>`;
+            } else {
+              cell.innerHTML = value.slice(-1);
             }
           });
 
