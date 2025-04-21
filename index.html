@@ -256,6 +256,52 @@
     }
 
     const interval = setInterval(countdown, 1000);
+    function makeDraggable(el) {
+  let offsetX = 0;
+  let offsetY = 0;
+  let isDragging = false;
+
+  const allCards = document.querySelectorAll('.card');
+
+  // Fonction pour démarrer le drag
+  const dragStart = (e) => {
+    isDragging = true;
+    const event = e.type.includes('touch') ? e.touches[0] : e;
+    offsetX = event.clientX - el.offsetLeft;
+    offsetY = event.clientY - el.offsetTop;
+
+    let maxZIndex = 0;
+    allCards.forEach(card => {
+      const z = parseInt(window.getComputedStyle(card).zIndex);
+      if (!isNaN(z) && z > maxZIndex) maxZIndex = z;
+    });
+    el.style.zIndex = maxZIndex + 1;
+  };
+
+  // Fonction pour déplacer la carte
+  const dragMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const event = e.type.includes('touch') ? e.touches[0] : e;
+    el.style.left = (event.clientX - offsetX) + "px";
+    el.style.top = (event.clientY - offsetY) + "px";
+  };
+
+  // Fonction pour terminer le drag
+  const dragEnd = () => {
+    isDragging = false;
+  };
+
+  // Événements souris
+  el.addEventListener("mousedown", dragStart);
+  document.addEventListener("mousemove", dragMove);
+  document.addEventListener("mouseup", dragEnd);
+
+  // Événements tactiles
+  el.addEventListener("touchstart", dragStart);
+  document.addEventListener("touchmove", dragMove, {passive: false});
+  document.addEventListener("touchend", dragEnd);
+}
 
     function makeDraggable(el) {
       let offsetX = 0;
