@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Énigme Numéro</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    h1, h2, h3 {
+      font-family: "Trattatello", fantasy;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: normal;
+      font-style: italic;
+      letter-spacing: 1px;
+      font-size: 30px;
+
+    }
+
+    #digits {
+      display: flex;
+      gap: 8px;
+      margin: 20px auto;
+      justify-content: center;
+    }
+
+    .digit-box {
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border: 3px solid #333;
+      border-radius: 8px;
+    }
+
+    .card {
+      position: absolute;
+      width: 200px;
+      padding: 10px;
+      border: 3px solid #333;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      cursor: move;
+      transition: transform 0.2s;
+      background-color: white;
+      animation: appear 0.8s ease-out;
+    }
+
+    @keyframes appear {
+      from {
+        transform: scale(0.2);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #counter {
+      font-size: 22px;
+      text-align: center;
+      margin: 20px auto;
+    }
+
+    #sudoku-card {
+  width: 280px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: white;
+  border: 3px solid #333;
+  border-radius: 10px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+#sudoku-container {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  width: 270px;
+  height: 270px;
+  border: 3px solid black;
+}
+
+.sudoku-cell {
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+  text-align: center;
+  border: 1px solid #aaa;
+  box-sizing: border-box;
+}
+
+.sudoku-cell.fixed {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+/* Bordures épaisses pour les régions 3x3 */
+#sudoku-container input:nth-child(3n) {
+  border-right: 3px solid black;
+}
+
+#sudoku-container input:nth-child(n+19):nth-child(-n+27),
+#sudoku-container input:nth-child(n+46):nth-child(-n+54) {
+  border-bottom: 3px solid black;
+}
+
+#sudoku-container input:nth-child(1),
+#sudoku-container input:nth-child(10),
+#sudoku-container input:nth-child(19),
+#sudoku-container input:nth-child(28),
+#sudoku-container input:nth-child(37),
+#sudoku-container input:nth-child(46),
+#sudoku-container input:nth-child(55),
+#sudoku-container input:nth-child(64),
+#sudoku-container input:nth-child(73) {
+  border-left: 3px solid black;
+}
+
+#sudoku-container input:nth-child(-n+9) {
+  border-top: 3px solid black;
+}
+#sudoku-container {
+  overflow: hidden; /* cache les débordements pour arrondir proprement */
+  border-radius: 10px; /* ajoute un bel arrondi à la grille extérieure */
+}
+
+/* Pour arrondir uniquement les coins externes de la grille interne */
+.sudoku-cell:nth-child(1) {
+  border-top-left-radius: 10px;
+}
+
+.sudoku-cell:nth-child(9) {
+  border-top-right-radius: 10px;
+}
+
+.sudoku-cell:nth-child(73) {
+  border-bottom-left-radius: 10px;
+}
+
+.sudoku-cell:nth-child(81) {
+  border-bottom-right-radius: 10px;
+}
+
+  </style>
+</head>
+<body>
+  <h2>Le num de Lulu</h2>
+  <div id="counter">Prochain indice dans : <span id="timer">300</span> secondes</div>
+  <div id="digits"></div>
+  <div id="sudoku-card">
+    <h3>Grille de Sudoku</h3>
+    <div id="sudoku-container"></div>
+  </div>
+
+  <script>
+    const colorList = [
+      { id: 1, color: "#4159D2" },
+      { id: 2, color: "#965BF5" },
+      { id: 3, color: "#12CACA" },
+      { id: 4, color: "#C1BDF0" },
+      { id: 5, color: "#56BD28" },
+      { id: 6, color: "#D3DCB0" },
+      { id: 7, color: "#FFE5B4" },
+      { id: 8, color: "#07E375" },
+      { id: 9, color: "#D23B5E" },
+      { id: 10, color: "#EDAB26" },
+      { id: 11, color: "#f2f2f2" },
+    ];
+
+    const clueList = [
+      { id: 1, text: "T'as vraiment besoint d'un indice pour celui la ?" },
+      { id: 2, text: "Une chance sur deux ;)" },
+      { id: 3, text: "Ca fait combien de KM ?" },
+      { id: 4, text: "Non, c'est pas une pub" },
+      { id: 5, text: "Le jour ou tout a commencer" },
+      { id: 6, text: "Mais d'ou vien ce cheval ?" },
+      { id: 7, text: "Ca matche ?" },
+      { id: 8, text: "Du sucre, du beurre, de la farine et des oeufs" },
+      { id: 9, text: "A toi le sudoku !" },
+      { id: 10, text: "Ouai Ouai, pas mal les spots" },
+      { id: 11, text: "21" },
+      { id: 1, text: "Evidement c'est un 0 !" },
+      { id: 2, text: "Si six scies scient six cyprès, six cent six scies scient six cent six cyprès !" },
+      { id: 3, text: "La prochaine fois on ira courrire un peut plus" },
+      { id: 11, text: "44" },
+      { id: 4, text: "Zieute ton courier" },
+      { id: 5, text: "je souffle mes bougies ce jour la" },
+      { id: 6, text: "1,2," },
+      { id: 11, text: "23" },
+      { id: 7, text: "Tinder pourrai t'aider" },
+      { id: 8, text: "Ca fait combien de quarts dans ce gateau ?" },
+      { id: 9, text: "pas de deuxieme indice, tout est dans le talent" },
+      { id: 10, text: "Tu as combien de nouveaux spots dans ta cuisine ?" },
+    ];
+
+    let current = 0;
+    let timer = 300;
+
+    const timerEl = document.getElementById("timer");
+    const counterEl = document.getElementById("counter");
+    const digitsContainer = document.getElementById("digits");
+
+    colorList.forEach(c => {
+  if (c.id === 11) return; // ne crée pas de digit-box pour l'ID neutre (11)
+
+  const input = document.createElement("input");
+  input.className = "digit-box";
+  input.style.backgroundColor = c.color;
+  input.setAttribute("id", `digit_${c.id}`);
+  digitsContainer.appendChild(input);
+});
+
+
+    function revealNext() {
+      if (current >= clueList.length) return;
+
+      const clue = clueList[current];
+      const color = colorList.find(c => c.id === clue.id)?.color || "#fff";
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.backgroundColor = color;
+      card.innerHTML = clue.text;
+
+      const xMin = 50, yMin = 200, cardWidth = 220, cardHeight = 150;
+      card.style.left = Math.floor(xMin + Math.random() * (window.innerWidth - cardWidth - xMin)) + "px";
+      card.style.top = Math.floor(yMin + Math.random() * (window.innerHeight - cardHeight - yMin)) + "px";
+
+      makeDraggable(card);
+      document.body.appendChild(card);
+
+      current++;
+
+      if (current >= clueList.length) {
+        clearInterval(interval);
+        counterEl.innerHTML = "Prochain indice : jamais";
+      }
+    }
+
+    function countdown() {
+      if (current >= clueList.length) return;
+      timer--;
+      timerEl.textContent = timer;
+      if (timer === 0) {
+        revealNext();
+        timer = 10;
+      }
+    }
+
+    const interval = setInterval(countdown, 1000);
+
+    function makeDraggable(el) {
+      let offsetX = 0;
+      let offsetY = 0;
+      let isDragging = false;
+
+      el.addEventListener("mousedown", e => {
+        isDragging = true;
+        offsetX = e.clientX - el.offsetLeft;
+        offsetY = e.clientY - el.offsetTop;
+
+        const allCards = document.querySelectorAll('.card');
+        let maxZIndex = 0;
+        allCards.forEach(card => {
+          const z = parseInt(window.getComputedStyle(card).zIndex);
+          if (!isNaN(z) && z > maxZIndex) maxZIndex = z;
+        });
+        el.style.zIndex = maxZIndex + 1;
+      });
+
+      document.addEventListener("mousemove", e => {
+        if (!isDragging) return;
+        el.style.left = (e.clientX - offsetX) + "px";
+        el.style.top = (e.clientY - offsetY) + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+    }
+
+    const sudokuGrid = [
+      [0, 0, 0, 0, 8, 0, 0, 0, 0],
+      [7, 0, 1, 4, 0, 2, 9, 0, 6],
+      [3, 0, 0, 0, 0, 0, 0, 0, 8],
+      [0, 0, 0, 9, 0, 7, 0, 0, 0],
+      [0, 2, 0, 0, 0, 0, 0, 1, 0],
+      [0, 0, 0, 8, 0, 1, 0, 0, 0],
+      [1, 0, 0, 0, 0, 0, 0, 0, 7],
+      [4, 0, 3, 7, 0, 6, 8, 0, 9],
+      [0, 0, 0, 0, 5, 0, 0, 0, 0]
+    ];
+
+    function createSudoku() {
+      const sudokuContainer = document.getElementById("sudoku-container");
+
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          const cell = document.createElement("input");
+          cell.type = "text";
+          cell.maxLength = 1;
+          cell.className = "sudoku-cell";
+
+          if (sudokuGrid[row][col] !== 0) {
+            cell.value = sudokuGrid[row][col];
+            cell.classList.add("fixed");
+            cell.disabled = true;
+          }
+
+          if (row === 5 && col === 4) {
+            const color9 = colorList.find(c => c.id === 9)?.color;
+            if (color9) cell.style.backgroundColor = color9;
+          }
+
+          cell.addEventListener("input", function () {
+            if (/[^1-9]/.test(cell.value)) {
+              cell.value = "";
+            }
+          });
+
+          sudokuContainer.appendChild(cell);
+        }
+      }
+    }
+
+    createSudoku();
+    for (let i = 0; i < 10; i++) revealNext();
+  </script>
+</body>
+</html>
