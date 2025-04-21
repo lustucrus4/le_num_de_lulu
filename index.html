@@ -256,20 +256,19 @@
     }
 
     const interval = setInterval(countdown, 1000);
+    
     function makeDraggable(el) {
   let offsetX = 0;
   let offsetY = 0;
   let isDragging = false;
 
-  const allCards = document.querySelectorAll('.card');
-
-  // Fonction pour démarrer le drag
   const dragStart = (e) => {
     isDragging = true;
     const event = e.type.includes('touch') ? e.touches[0] : e;
     offsetX = event.clientX - el.offsetLeft;
     offsetY = event.clientY - el.offsetTop;
 
+    const allCards = document.querySelectorAll('.card');
     let maxZIndex = 0;
     allCards.forEach(card => {
       const z = parseInt(window.getComputedStyle(card).zIndex);
@@ -278,7 +277,6 @@
     el.style.zIndex = maxZIndex + 1;
   };
 
-  // Fonction pour déplacer la carte
   const dragMove = (e) => {
     if (!isDragging) return;
     e.preventDefault();
@@ -287,7 +285,6 @@
     el.style.top = (event.clientY - offsetY) + "px";
   };
 
-  // Fonction pour terminer le drag
   const dragEnd = () => {
     isDragging = false;
   };
@@ -299,39 +296,10 @@
 
   // Événements tactiles
   el.addEventListener("touchstart", dragStart);
-  document.addEventListener("touchmove", dragMove, {passive: false});
+  document.addEventListener("touchmove", dragMove, { passive: false });
   document.addEventListener("touchend", dragEnd);
 }
 
-    function makeDraggable(el) {
-      let offsetX = 0;
-      let offsetY = 0;
-      let isDragging = false;
-
-      el.addEventListener("mousedown", e => {
-        isDragging = true;
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-
-        const allCards = document.querySelectorAll('.card');
-        let maxZIndex = 0;
-        allCards.forEach(card => {
-          const z = parseInt(window.getComputedStyle(card).zIndex);
-          if (!isNaN(z) && z > maxZIndex) maxZIndex = z;
-        });
-        el.style.zIndex = maxZIndex + 1;
-      });
-
-      document.addEventListener("mousemove", e => {
-        if (!isDragging) return;
-        el.style.left = (e.clientX - offsetX) + "px";
-        el.style.top = (e.clientY - offsetY) + "px";
-      });
-
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-      });
-    }
 
     const sudokuGrid = [
       [0, 0, 0, 0, 8, 0, 0, 0, 0],
